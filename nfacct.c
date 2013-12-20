@@ -56,6 +56,12 @@ static int nfacct_cmd_version(int argc, char *argv[]);
 static int nfacct_cmd_help(int argc, char *argv[]);
 static int nfacct_cmd_restore(int argc, char *argv[]);
 
+#ifndef HAVE_LIBNL20
+#define nl_sock nl_handle
+#define nl_socket_alloc nl_handle_alloc
+#define nl_socket_free nl_handle_destroy
+#endif
+
 static void usage(char *argv[])
 {
 	fprintf(stderr, "Usage: %s command [parameters]...\n", argv[0]);
@@ -177,7 +183,7 @@ static int valid_input(struct nl_msg *msg, void *arg)
 static int nfacct_cmd_list(int argc, char *argv[])
 {
 	struct nl_msg *msg;
-	struct nl_handle *handle;
+	struct nl_sock *handle;
 	int zeroctr = 0;
 	int ret, i;
 
@@ -213,7 +219,7 @@ static int nfacct_cmd_list(int argc, char *argv[])
 		goto fail;
 	}
 
-	handle = nl_handle_alloc();
+	handle = nl_socket_alloc();
 	if ((ret = nfnl_connect(handle))) {
 		NL_DBG(2, "Can't connect handle: %s line: %d\n",
 							__FUNCTION__, __LINE__);
@@ -235,7 +241,7 @@ static int nfacct_cmd_list(int argc, char *argv[])
 
 fail_send:
 	nl_close(handle);
-	nl_handle_destroy(handle);
+	nl_socket_free(handle);
 fail:
 	nlmsg_free(msg);
 	return ret;
@@ -244,7 +250,7 @@ fail:
 static int _nfacct_cmd_add(char *name, int pkts, int bytes)
 {
 	struct nl_msg *msg;
-	struct nl_handle *handle;
+	struct nl_sock *handle;
 	char nfname[NFACCT_NAME_MAX];
 	int ret;
 
@@ -274,7 +280,7 @@ static int _nfacct_cmd_add(char *name, int pkts, int bytes)
 	nla_put_u64(msg, NFACCT_PKTS, htobe64(pkts));
 	nla_put_u64(msg, NFACCT_BYTES, htobe64(bytes));
 
-	handle = nl_handle_alloc();
+	handle = nl_socket_alloc();
 	if ((ret = nfnl_connect(handle))) {
 		NL_DBG(2, "Can't connect handle: %s line: %d\n",
 							__FUNCTION__, __LINE__);
@@ -295,7 +301,7 @@ static int _nfacct_cmd_add(char *name, int pkts, int bytes)
 
 fail_send:
 	nl_close(handle);
-	nl_handle_destroy(handle);
+	nl_socket_free(handle);
 fail:
 	nlmsg_free(msg);
 	return ret;
@@ -319,7 +325,7 @@ static int nfacct_cmd_add(int argc, char *argv[])
 static int nfacct_cmd_delete(int argc, char *argv[])
 {
 	struct nl_msg *msg;
-	struct nl_handle *handle;
+	struct nl_sock *handle;
 	char nfname[NFACCT_NAME_MAX];
 	int ret;
 
@@ -355,7 +361,7 @@ static int nfacct_cmd_delete(int argc, char *argv[])
 
 	nla_put_string(msg, NFACCT_NAME, nfname);
 
-	handle = nl_handle_alloc();
+	handle = nl_socket_alloc();
 	if ((ret = nfnl_connect(handle))) {
 		NL_DBG(2, "Can't connect handle: %s line: %d\n",
 							__FUNCTION__, __LINE__);
@@ -376,7 +382,7 @@ static int nfacct_cmd_delete(int argc, char *argv[])
 
 fail_send:
 	nl_close(handle);
-	nl_handle_destroy(handle);
+	nl_socket_free(handle);
 fail:
 	nlmsg_free(msg);
 	return ret;
@@ -387,7 +393,7 @@ fail:
 static int nfacct_cmd_get(int argc, char *argv[])
 {
 	struct nl_msg *msg;
-	struct nl_handle *handle;
+	struct nl_sock *handle;
 	struct nl_cb *cb;
 	char nfname[NFACCT_NAME_MAX];
 	int zeroctr = 0;
@@ -435,7 +441,7 @@ static int nfacct_cmd_get(int argc, char *argv[])
 
 	nla_put_string(msg, NFACCT_NAME, nfname);
 
-	handle = nl_handle_alloc();
+	handle = nl_socket_alloc();
 
 	if (handle) {
 		cb = nl_cb_alloc(NL_CB_DEFAULT);
@@ -473,7 +479,7 @@ static int nfacct_cmd_get(int argc, char *argv[])
 
 fail_send:
 	nl_close(handle);
-	nl_handle_destroy(handle);
+	nl_socket_free(handle);
 fail:
 	nlmsg_free(msg);
 	return ret;
@@ -482,7 +488,7 @@ fail:
 static int nfacct_cmd_flush(int argc, char *argv[])
 {
 	struct nl_msg *msg;
-	struct nl_handle *handle;
+	struct nl_sock *handle;
 	int ret;
 
 	if (argc > 2) {
@@ -509,7 +515,7 @@ static int nfacct_cmd_flush(int argc, char *argv[])
 		goto fail;
 	}
 
-	handle = nl_handle_alloc();
+	handle = nl_socket_alloc();
 	if ((ret = nfnl_connect(handle))) {
 		NL_DBG(2, "Can't connect handle: %s line: %d\n",
 							__FUNCTION__, __LINE__);
@@ -530,7 +536,7 @@ static int nfacct_cmd_flush(int argc, char *argv[])
 
 fail_send:
 	nl_close(handle);
-	nl_handle_destroy(handle);
+	nl_socket_free(handle);
 fail:
 	nlmsg_free(msg);
 	return ret;

@@ -1,11 +1,16 @@
 LOCAL_PATH:= $(call my-dir)
+include $(CLEAR_VARS)
+include $(LOCAL_PATH)/android.config
 
 INCLUDES = $(LOCAL_PATH)
 INCLUDES += external/libnl/include
-LIBS += -lnl-3
+
+ifdef HAVE_LIBNL20
+LOCAL_CFLAGS += -DHAVE_LIBNL20
+endif
 
 ########################
-include $(CLEAR_VARS)
+
 LOCAL_SRC_FILES:= nfacct.c
 LOCAL_MODULE := nfacct
 
